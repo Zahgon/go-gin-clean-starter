@@ -2,11 +2,11 @@ package auth
 
 import (
 	"github.com/Caknoooo/go-gin-clean-starter/modules/auth/controller"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/samber/do"
 )
 
-func RegisterRoutes(server *gin.Engine, injector *do.Injector) {
+func RegisterRoutes(server *echo.Echo, injector *do.Injector) {
 	authController := do.MustInvoke[controller.AuthController](injector)
 
 	authRoutes := server.Group("/api/auth")

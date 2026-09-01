@@ -3,22 +3,23 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 )
 
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func CORSMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
 
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Header("Access-Control-Allow-Methods", "POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE")
+			c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+			c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Response().Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+			c.Response().Header().Set("Access-Control-Allow-Methods", "POST, HEAD, PATCH, OPTIONS, GET, PUT, DELETE")
 
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(204)
-			return
+			if c.Request().Method == http.MethodOptions {
+				return c.NoContent(204)
+			}
+
+			return next(c)
 		}
-
-		c.Next()
 	}
 }

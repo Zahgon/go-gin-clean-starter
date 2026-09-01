@@ -9,21 +9,21 @@ import (
 	userDto "github.com/Caknoooo/go-gin-clean-starter/modules/user/dto"
 	"github.com/Caknoooo/go-gin-clean-starter/pkg/constants"
 	"github.com/Caknoooo/go-gin-clean-starter/pkg/utils"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/samber/do"
 	"gorm.io/gorm"
 )
 
 type (
 	AuthController interface {
-		Register(ctx *gin.Context)
-		Login(ctx *gin.Context)
-		RefreshToken(ctx *gin.Context)
-		Logout(ctx *gin.Context)
-		SendVerificationEmail(ctx *gin.Context)
-		VerifyEmail(ctx *gin.Context)
-		SendPasswordReset(ctx *gin.Context)
-		ResetPassword(ctx *gin.Context)
+		Register(ctx echo.Context) error
+		Login(ctx echo.Context) error
+		RefreshToken(ctx echo.Context) error
+		Logout(ctx echo.Context) error
+		SendVerificationEmail(ctx echo.Context) error
+		VerifyEmail(ctx echo.Context) error
+		SendPasswordReset(ctx echo.Context) error
+		ResetPassword(ctx echo.Context) error
 	}
 
 	authController struct {
@@ -43,163 +43,146 @@ func NewAuthController(injector *do.Injector, as service.AuthService) AuthContro
 	}
 }
 
-func (c *authController) Register(ctx *gin.Context) {
+func (c *authController) Register(ctx echo.Context) error {
 	var req userDto.UserCreateRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	// Validate request
 	if err := c.authValidation.ValidateRegisterRequest(req); err != nil {
 		res := utils.BuildResponseFailed("Validation failed", err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	result, err := c.authService.Register(ctx.Request.Context(), req)
+	result, err := c.authService.Register(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_REGISTER_USER, err.Error(), nil)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(userDto.MESSAGE_SUCCESS_REGISTER_USER, result)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) Login(ctx *gin.Context) {
+func (c *authController) Login(ctx echo.Context) error {
 	var req userDto.UserLoginRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		response := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, response)
-		return
+		return ctx.JSON(http.StatusBadRequest, response)
 	}
 
 	// Validate request
 	if err := c.authValidation.ValidateLoginRequest(req); err != nil {
 		res := utils.BuildResponseFailed("Validation failed", err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	result, err := c.authService.Login(ctx.Request.Context(), req)
+	result, err := c.authService.Login(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_LOGIN, err.Error(), nil)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(userDto.MESSAGE_SUCCESS_LOGIN, result)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) RefreshToken(ctx *gin.Context) {
+func (c *authController) RefreshToken(ctx echo.Context) error {
 	var req dto.RefreshTokenRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	result, err := c.authService.RefreshToken(ctx.Request.Context(), req)
+	result, err := c.authService.RefreshToken(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_REFRESH_TOKEN, err.Error(), nil)
-		ctx.JSON(http.StatusUnauthorized, res)
-		return
+		return ctx.JSON(http.StatusUnauthorized, res)
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_REFRESH_TOKEN, result)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) Logout(ctx *gin.Context) {
-	userId := ctx.MustGet("user_id").(string)
+func (c *authController) Logout(ctx echo.Context) error {
+	userId := ctx.Get("user_id").(string)
 
-	err := c.authService.Logout(ctx.Request.Context(), userId)
+	err := c.authService.Logout(ctx.Request().Context(), userId)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_LOGOUT, err.Error(), nil)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_LOGOUT, nil)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) SendVerificationEmail(ctx *gin.Context) {
+func (c *authController) SendVerificationEmail(ctx echo.Context) error {
 	var req userDto.SendVerificationEmailRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	err := c.authService.SendVerificationEmail(ctx.Request.Context(), req)
+	err := c.authService.SendVerificationEmail(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_PROSES_REQUEST, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(userDto.MESSAGE_SEND_VERIFICATION_EMAIL_SUCCESS, nil)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) VerifyEmail(ctx *gin.Context) {
+func (c *authController) VerifyEmail(ctx echo.Context) error {
 	var req userDto.VerifyEmailRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	result, err := c.authService.VerifyEmail(ctx.Request.Context(), req)
+	result, err := c.authService.VerifyEmail(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_VERIFY_EMAIL, err.Error(), nil)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(userDto.MESSAGE_SUCCESS_VERIFY_EMAIL, result)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) SendPasswordReset(ctx *gin.Context) {
+func (c *authController) SendPasswordReset(ctx echo.Context) error {
 	var req dto.SendPasswordResetRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	err := c.authService.SendPasswordReset(ctx.Request.Context(), req)
+	err := c.authService.SendPasswordReset(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_SEND_PASSWORD_RESET, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_SEND_PASSWORD_RESET, nil)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }
 
-func (c *authController) ResetPassword(ctx *gin.Context) {
+func (c *authController) ResetPassword(ctx echo.Context) error {
 	var req dto.ResetPasswordRequest
-	if err := ctx.ShouldBind(&req); err != nil {
+	if err := ctx.Bind(&req); err != nil {
 		res := utils.BuildResponseFailed(userDto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
-	err := c.authService.ResetPassword(ctx.Request.Context(), req)
+	err := c.authService.ResetPassword(ctx.Request().Context(), req)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_RESET_PASSWORD, err.Error(), nil)
-		ctx.JSON(http.StatusBadRequest, res)
-		return
+		return ctx.JSON(http.StatusBadRequest, res)
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_RESET_PASSWORD, nil)
-	ctx.JSON(http.StatusOK, res)
+	return ctx.JSON(http.StatusOK, res)
 }

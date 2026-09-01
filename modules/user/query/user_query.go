@@ -1,7 +1,7 @@
 package query
 
 import (
-	"github.com/Caknoooo/go-pagination"
+	"github.com/Caknoooo/go-gin-clean-starter/pkg/pagination"
 	"gorm.io/gorm"
 )
 

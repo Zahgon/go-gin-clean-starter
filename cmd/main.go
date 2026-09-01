@@ -7,12 +7,13 @@ import (
 	"github.com/Caknoooo/go-gin-clean-starter/middlewares"
 	"github.com/Caknoooo/go-gin-clean-starter/modules/auth"
 	"github.com/Caknoooo/go-gin-clean-starter/modules/user"
+	"github.com/Caknoooo/go-gin-clean-starter/pkg/httpx"
 	"github.com/Caknoooo/go-gin-clean-starter/providers"
 	"github.com/Caknoooo/go-gin-clean-starter/script"
 	"github.com/samber/do"
 
 	"github.com/common-nighthawk/go-figure"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 )
 
 func args(injector *do.Injector) bool {
@@ -24,8 +25,8 @@ func args(injector *do.Injector) bool {
 	return true
 }
 
-func run(server *gin.Engine) {
-	server.Static("/assets", "./assets")
+func run(server *echo.Echo) {
+	httpx.Static(server, "/assets", "./assets")
 
 	port := os.Getenv("GOLANG_PORT")
 	if port == "" {
@@ -42,7 +43,7 @@ func run(server *gin.Engine) {
 	myFigure := figure.NewColorFigure("Caknoo", "", "green", true)
 	myFigure.Print()
 
-	if err := server.Run(serve); err != nil {
+	if err := server.Start(serve); err != nil {
 		log.Fatalf("error running server: %v", err)
 	}
 }
@@ -58,8 +59,9 @@ func main() {
 		return
 	}
 
-	server := gin.Default()
+	server := httpx.NewServer()
 	server.Use(middlewares.CORSMiddleware())
+	server.Use(httpx.SingleSegmentParams())
 
 	// Register module routes
 	user.RegisterRoutes(server, injector)

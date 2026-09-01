@@ -159,11 +159,11 @@ package $MODULE_NAME
 
 import (
 	"github.com/Caknoooo/go-gin-clean-starter/modules/$MODULE_NAME/controller"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/samber/do"
 )
 
-func RegisterRoutes(server *gin.Engine, injector *do.Injector) {
+func RegisterRoutes(server *echo.Echo, injector *do.Injector) {
 	${CAMEL_MODULE_NAME}Controller := do.MustInvoke[controller.${PASCAL_MODULE_NAME}Controller](injector)
 
 	${CAMEL_MODULE_NAME}Routes := server.Group("/api/$MODULE_NAME")
